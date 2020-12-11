@@ -59,40 +59,40 @@ class StockTradingEnv(gym.Env):
 
         return obs
 
-    def _take_action(self, action):
+    def _take_action(self, action): #action format: [行动类型， 数量]
         # Set the current price to a random price within the time step
         current_price = random.uniform(
-            self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"])
+            self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"]) #开盘价到收盘价间的随机值
 
-        action_type = action[0]
-        amount = action[1]
+        action_type = action[0] #行动类型：买/卖/持有
+        amount = action[1] #数量
 
-        if action_type < 1:
+        if action_type < 1: #买入操作的相关账户计算问题
             # Buy amount % of balance in shares
-            total_possible = int(self.balance / current_price)
-            shares_bought = int(total_possible * amount)
-            prev_cost = self.cost_basis * self.shares_held
-            additional_cost = shares_bought * current_price
+            total_possible = int(self.balance / current_price) #现金余额可买总数量
+            shares_bought = int(total_possible * amount) #购买股票数量=总数量*买入比例
+            prev_cost = self.cost_basis * self.shares_held #前持仓金额=平均每股持仓价格 * 股票持有数量
+            additional_cost = shares_bought * current_price #新增持仓成本（金额）=购买数量*价格
 
-            self.balance -= additional_cost #现金余额
+            self.balance -= additional_cost #现金余额 = 现金余额-新增持仓金额
             self.cost_basis = (
-                prev_cost + additional_cost) / (self.shares_held + shares_bought)
-            self.shares_held += shares_bought
+                prev_cost + additional_cost) / (self.shares_held + shares_bought) #平均每股持仓价格 =（前持仓成本（金额）+新增持仓成本（金额）/（股票持有总数量+新购买股票数量）
+            self.shares_held += shares_bought #股票持有数量 = 股票持有数量 + 新购买股票数量
 
-        elif action_type < 2:
+        elif action_type < 2: #卖出操作的相关账户计算问题
             # Sell amount % of shares held
-            shares_sold = int(self.shares_held * amount)
-            self.balance += shares_sold * current_price
-            self.shares_held -= shares_sold
-            self.total_shares_sold += shares_sold
-            self.total_sales_value += shares_sold * current_price
+            shares_sold = int(self.shares_held * amount) #新卖出股票数量 = 股票持有总数*卖出比例   #卖出比例的数值是正值
+            self.balance += shares_sold * current_price #账户余额 = 账户余额 + 新卖出股票数量*当前价格  #账户余额增加
+            self.shares_held -= shares_sold #股票持有总数 = 股票持有总数 - 新卖出股票数量
+            self.total_shares_sold += shares_sold #股票卖出总量 = 股票卖出总量 +新卖出股票量
+            self.total_sales_value += shares_sold * current_price #股票卖出总金额 = 股票卖出总量*当前价格
 
-        self.net_worth = self.balance + self.shares_held * current_price
+        self.net_worth = self.balance + self.shares_held * current_price #账户净值 = 现金余额 + 股票持有总数 * 当前价格
 
         if self.net_worth > self.max_net_worth:
-            self.max_net_worth = self.net_worth
+            self.max_net_worth = self.net_worth #历史最大账户净值
 
-        if self.shares_held == 0:
+        if self.shares_held == 0: #现金持有总量为0，则平均每股持仓价格为0
             self.cost_basis = 0
 
     def step(self, action):
