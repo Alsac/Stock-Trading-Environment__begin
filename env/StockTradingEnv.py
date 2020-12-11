@@ -75,7 +75,7 @@ class StockTradingEnv(gym.Env):
             additional_cost = shares_bought * current_price #新增持仓成本（金额）=购买数量*价格
 
             self.balance -= additional_cost #现金余额 = 现金余额-新增持仓金额
-            self.cost_basis = (
+            self.cost_basis = ( #cost_basis： Avg cost for held shares
                 prev_cost + additional_cost) / (self.shares_held + shares_bought) #平均每股持仓价格 =（前持仓成本（金额）+新增持仓成本（金额）/（股票持有总数量+新购买股票数量）
             self.shares_held += shares_bought #股票持有数量 = 股票持有数量 + 新购买股票数量
 
@@ -131,7 +131,7 @@ class StockTradingEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         # Render the environment to the screen
-        profit = self.net_worth - INITIAL_ACCOUNT_BALANCE
+        profit = self.net_worth - INITIAL_ACCOUNT_BALANCE #利润 = 账户净值 - 初始账户金额
 
         print(f'Step: {self.current_step}')
         print(f'Balance: {self.balance}')
